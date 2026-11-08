@@ -187,13 +187,16 @@ function render() {
     .join('');
 
   $('roscoHost').innerHTML = `${roscoSVG(p.letras, p.cursor, { activo: fase !== 'fin', etiqueta: `Rosco de ${p.nombre}` })}
-    <div class="centro"><div class="letra-grande">${fase === 'fin' ? '' : esc(l.letra)}</div>
+    <div class="centro"><div class="letra-grande">${fase === 'fin' || fase === 'traspaso' ? '' : esc(l.letra)}</div>
     <div class="turno-de">${fase === 'fin' ? '' : esc(p.nombre)}</div></div>`;
 
-  if (fase === 'listo' || fase === 'fin') {
-    $('carta').innerHTML = `<p class="definicion suave">${
-      fase === 'listo' ? 'Cuando estén listos, tocá <b>Empezar</b>.' : 'Partida terminada.'
-    }</p>`;
+  const sinPregunta = {
+    listo: 'Cuando estén listos, tocá <b>Empezar</b>.',
+    traspaso: 'Esperando a que el otro jugador esté listo…',
+    fin: 'Partida terminada.',
+  };
+  if (sinPregunta[fase]) {
+    $('carta').innerHTML = `<p class="definicion suave">${sinPregunta[fase]}</p>`;
   } else {
     $('carta').innerHTML = `
       <div class="consigna">${esc(consigna(l.tipo, l.letra))}</div>
@@ -209,9 +212,11 @@ function render() {
   $('controles').hidden = fase === 'fin';
 
   pintarOverlay();
-  if (fase === 'jugando' || fase === 'pausa') pedirPantalla();
+  if (fase === 'jugando' || fase === 'pausa' || fase === 'traspaso') pedirPantalla();
   else liberarPantalla();
 }
+
+const TITULOS_TRASPASO = { pasada: '¡Pasapalabra!', errada: 'Incorrecta', completo: '¡Rosco completo!' };
 
 function pintarOverlay() {
   const ov = $('overlay');
@@ -227,6 +232,16 @@ function pintarOverlay() {
           ? ` / ${esc(estado.jugadores[1].roscoTitulo)}` : ''}</p>
       <button class="btn grande bien" data-acc="empezar">▶ Empezar</button>
       <button class="link" data-acc="menu">Cambiar ajustes</button>
+    </div>`;
+    ov.hidden = false;
+  } else if (fase === 'traspaso') {
+    const { de, a, motivo } = estado.traspaso;
+    const quien = esc(estado.jugadores[a].nombre);
+    ov.innerHTML = `<div class="overlay-card traspaso ${motivo}">
+      <h2>${TITULOS_TRASPASO[motivo]}</h2>
+      <p>Termina el turno de <b>${esc(estado.jugadores[de].nombre)}</b>.<br>Sigue <b>${quien}</b>: el reloj está frenado.</p>
+      <button class="btn grande bien" data-acc="seguir">▶ Seguir con ${quien}</button>
+      <button class="link" data-acc="deshacer">↶ Me equivoqué, deshacer</button>
     </div>`;
     ov.hidden = false;
   } else if (fase === 'pausa') {
@@ -335,7 +350,7 @@ function conectarEventos() {
   });
 
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && estado && ['jugando', 'pausa'].includes(estado.fase)) pedirPantalla();
+    if (document.visibilityState === 'visible' && estado && ['jugando', 'pausa', 'traspaso'].includes(estado.fase)) pedirPantalla();
   });
 }
 

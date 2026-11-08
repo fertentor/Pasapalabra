@@ -77,15 +77,34 @@ console.log('✔ Correcta: A verde y sigue la B');
 
 // Incorrecta → B roja y pasa el turno a Beto (su A)
 await cel.click('#btnIncorrecta');
+// ...pero antes hay una pausa: el reloj de Beto no corre hasta que el celular toque "Seguir".
+await tv.waitForSelector('.tv-overlay.traspaso.errada');
+assert.match(await tv.textContent('.tv-overlay.traspaso h2'), /INCORRECTA/);
+assert.match(await tv.textContent('.tv-overlay.traspaso p'), /Beto/);
+assert.ok(!(await tv.content()).includes('Lugar al que van los chicos'), 'el TV mostró la definición durante el traspaso');
+assert.match(await cel.textContent('#overlay .overlay-card.traspaso'), /Seguir con Beto/);
+assert.equal(await cel.isDisabled('#btnCorrecta'), true);
+await shot(tv, '05a-tv-traspaso');
+await shot(cel, '05b-celular-traspaso');
+const tBeto0 = await tv.textContent('[data-tiempo="1"]');
+await tv.waitForTimeout(1500);
+assert.equal(await tv.textContent('[data-tiempo="1"]'), tBeto0, 'el reloj corrió durante el traspaso');
+console.log('✔ Incorrecta: pausa de traspaso, el reloj de Beto no corre');
+
+await cel.click('[data-acc=seguir]');
 await tv.waitForFunction(() => document.querySelector('.tv-turno')?.textContent.includes('Beto'));
 assert.match(await tv.textContent('.tv-consigna'), /Empieza con A/);
-console.log('✔ Incorrecta: pasa el turno a Beto');
+console.log('✔ Seguir: arranca Beto con su A');
 
-// Pasapalabra de Beto → vuelve el turno a Ana en la C
+// Pasapalabra de Beto → pausa y después vuelve el turno a Ana en la C
 await cel.click('#btnPasa');
+await tv.waitForSelector('.tv-overlay.traspaso.pasada');
+assert.match(await tv.textContent('.tv-overlay.traspaso h2'), /PASAPALABRA/);
+assert.match(await tv.textContent('.tv-overlay.traspaso p'), /Ana/);
+await cel.click('[data-acc=seguir]');
 await tv.waitForFunction(() => document.querySelector('.tv-turno')?.textContent.includes('Ana'));
 assert.match(await tv.textContent('.tv-consigna'), /Empieza con C/);
-console.log('✔ Pasapalabra: pasa el turno a Ana, que sigue en la C');
+console.log('✔ Pasapalabra: pausa y luego sigue Ana en la C');
 
 // Los relojes bajan solo en el TV mientras juega Ana
 const t0 = await tv.textContent('[data-tiempo="0"]');

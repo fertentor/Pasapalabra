@@ -18,6 +18,9 @@ const roscoDePrueba = (id = 'x') => ({
   letras: LETRAS.map((l) => ({ letra: l, tipo: 'empieza', definicion: `def ${l}`, respuesta: `${l.toLowerCase()}xx` })),
 });
 
+// Tras una Incorrecta o un Pasapalabra hay un traspaso: el anfitrión toca "Seguir".
+const seguir = (s, t) => (s.fase === 'traspaso' ? reanudar(s, t) : s);
+
 const iniciar = (modo = 'dos', extra = {}) =>
   empezar(crearPartida({ modo, nombres: ['Ana', 'Beto'], roscos: [roscoDePrueba('a'), roscoDePrueba('b')], ...extra }), 0);
 
@@ -121,7 +124,9 @@ test('pasapalabra pasa el turno y la letra vuelve en la vuelta siguiente', () =>
   let s = iniciar();
   s = pasapalabra(s, 0); // J1 pasa la A → turno J2
   assert.equal(s.turno, 1);
+  s = seguir(s, 0);
   s = pasapalabra(s, 0); // J2 pasa su A → turno J1, que sigue en la B
+  s = seguir(s, 0);
   assert.equal(s.turno, 0);
   assert.equal(letraActual(s).letra, 'B');
   // J1 resuelve todo salvo la A: cuando llega a la Z, vuelve a la A pasada
@@ -229,6 +234,87 @@ test('no muta el estado de entrada', () => {
   assert.equal(JSON.stringify(s), antes);
 });
 
+// ---- traspaso de turno -----------------------------------------------------
+test('incorrecta y pasapalabra frenan la partida en un traspaso hacia el otro jugador', () => {
+  for (const [accion, motivo] of [[incorrecta, 'errada'], [pasapalabra, 'pasada']]) {
+    const s = accion(iniciar(), 5000);
+    assert.equal(s.fase, 'traspaso');
+    assert.equal(s.turno, 1);
+    assert.deepEqual(s.traspaso, { de: 0, a: 1, motivo });
+  }
+});
+
+test('durante el traspaso el reloj no corre y las acciones se ignoran', () => {
+  let s = incorrecta(iniciar(), 5000);
+  const antes = JSON.stringify(s);
+  s = tick(s, 60_000);
+  assert.equal(JSON.stringify(s), antes);
+  assert.equal(correcta(s, 61_000), s);
+  assert.equal(incorrecta(s, 61_000), s);
+  assert.equal(pasapalabra(s, 61_000), s);
+  assert.equal(pausar(s, 62_000), s);
+  assert.equal(s.jugadores[0].remainingMs, 145_000);
+  assert.equal(s.jugadores[1].remainingMs, 150_000);
+});
+
+test('reanudar sale del traspaso y corre el reloj del jugador que sigue', () => {
+  let s = pasapalabra(iniciar(), 5000);
+  s = reanudar(s, 100_000);
+  assert.equal(s.fase, 'jugando');
+  assert.equal(s.traspaso, null);
+  s = tick(s, 103_000);
+  assert.equal(s.jugadores[1].remainingMs, 147_000);
+  assert.equal(s.jugadores[0].remainingMs, 145_000);
+});
+
+test('correcta no genera traspaso: sigue el mismo jugador', () => {
+  const s = correcta(iniciar(), 1000);
+  assert.equal(s.fase, 'jugando');
+  assert.equal(s.traspaso, null);
+});
+
+test('no hay traspaso si el otro jugador ya terminó, ni en modo solo', () => {
+  let s = tick(iniciar(), 150_000); // J1 sin tiempo, juega J2
+  s = incorrecta(s, 150_000);
+  assert.equal(s.fase, 'jugando');
+  s = incorrecta(iniciar('solo'), 0);
+  assert.equal(s.fase, 'jugando');
+});
+
+test('completar el rosco con el otro jugador todavía en carrera también hace traspaso', () => {
+  let s = iniciar();
+  for (let i = 0; i < 27; i++) s = correcta(s, 0);
+  assert.equal(s.jugadores[0].finished, true);
+  assert.equal(s.fase, 'traspaso');
+  assert.deepEqual(s.traspaso, { de: 0, a: 1, motivo: 'completo' });
+});
+
+test('estadoPublico en traspaso avisa del cambio y oculta la definición del que sigue', () => {
+  const s = incorrecta(iniciar(), 1000);
+  const pub = estadoPublico(s);
+  assert.equal(pub.fase, 'traspaso');
+  assert.deepEqual(pub.traspaso, { de: 0, a: 1, motivo: 'errada' });
+  assert.equal(pub.actual, null);
+  assert.ok(!JSON.stringify(pub).includes('def A'));
+  assert.equal(estadoPublico(reanudar(s, 2000)).traspaso, null);
+});
+
+test('deshacer desde el traspaso devuelve el turno a quien se equivocó, en pausa', () => {
+  let s = incorrecta(iniciar(), 1000);
+  s = deshacer(s, 2000);
+  assert.equal(s.fase, 'pausa');
+  assert.equal(s.turno, 0);
+  assert.equal(s.traspaso, null);
+  assert.equal(s.jugadores[0].letras[0].estado, 'pendiente');
+  assert.equal(letraActual(s).letra, 'A');
+});
+
+test('terminar desde un traspaso cierra la partida', () => {
+  const s = terminar(incorrecta(iniciar(), 1000), 2000);
+  assert.equal(s.fase, 'fin');
+  assert.equal(s.traspaso, null);
+});
+
 // ---- deshacer --------------------------------------------------------------
 test('deshacer restaura letra, cursor y turno, y deja la partida en pausa', () => {
   let s = iniciar();
@@ -240,9 +326,9 @@ test('deshacer restaura letra, cursor y turno, y deja la partida en pausa', () =
   assert.equal(s.jugadores[0].letras[1].estado, 'pendiente');
   assert.equal(letraActual(s).letra, 'B');
   assert.equal(s.jugadores[0].letras[0].estado, 'acertada');
-  // el tiempo gastado no se devuelve: J1 jugó 2 s; el último segundo corrió para J2
+  // el tiempo gastado no se devuelve: J1 jugó 2 s; durante el traspaso no corrió el reloj de J2
   assert.equal(s.jugadores[0].remainingMs, 148_000);
-  assert.equal(s.jugadores[1].remainingMs, 149_000);
+  assert.equal(s.jugadores[1].remainingMs, 150_000);
 });
 
 test('deshacer sin historial no hace nada', () => {
@@ -293,6 +379,8 @@ test('estadoPublico nunca incluye respuestas ni definiciones ajenas a la letra a
   revisar(s);
   for (let i = 0; i < 12; i++) {
     s = i % 3 === 0 ? pasapalabra(s, i) : i % 3 === 1 ? correcta(s, i) : incorrecta(s, i);
+    revisar(s); // también durante el traspaso
+    s = seguir(s, i);
     revisar(s);
   }
   s = pausar(s, 100);

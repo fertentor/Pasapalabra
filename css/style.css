@@ -206,6 +206,12 @@ body.tv { height: 100vh; overflow: hidden; }
 
 .tv-overlay { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2vmin; background: rgba(4, 12, 40, .82); backdrop-filter: blur(3px); }
 .tv-overlay h2 { margin: 0 0 2vmin; font-size: 12vmin; color: var(--acento); text-align: center; }
+.tv-overlay p { margin: 0; font-size: 6.5vmin; color: var(--suave); }
+.tv-overlay p b { color: var(--texto); }
+.tv-overlay.traspaso.pasada h2 { color: var(--pasa); }
+.tv-overlay.traspaso.errada h2 { color: var(--mal-claro); }
+.overlay-card.traspaso.pasada h2 { color: var(--pasa); }
+.overlay-card.traspaso.errada h2 { color: var(--mal-claro); }
 .fila-fin { display: grid; grid-template-columns: 1fr 14vmin 14vmin; gap: 3vmin; min-width: 62vmin; font-size: 6vmin; font-weight: 800; }
 .fila-fin span:not(:first-child) { text-align: right; }
 .fila-fin.gana span:first-child { color: var(--acento); }

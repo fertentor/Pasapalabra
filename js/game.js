@@ -7,6 +7,9 @@ const MAX_HISTORIAL = 300;
 
 /**
  * Fases: 'listo' (armada, sin empezar) → 'jugando' ⇄ 'pausa' → 'fin'.
+ * 'traspaso' es una pausa automática cuando el turno pasa al otro jugador
+ * (por una Incorrecta, un Pasapalabra o un rosco completado): el reloj queda
+ * frenado hasta que el anfitrión toque "Seguir".
  * Estados de letra: 'pendiente' | 'acertada' | 'errada' | 'pasada'.
  */
 
@@ -48,6 +51,7 @@ export function crearPartida({ modo = 'dos', nombres = [], roscos, tiempoMs = TI
     lastTickAt: null,
     jugadores,
     historial: [],
+    traspaso: null,
   };
 }
 
@@ -91,12 +95,13 @@ export function pausar(state, ahora) {
 export function terminar(state, ahora) {
   const s = tick(state, ahora);
   if (s.fase === 'fin') return s;
-  return { ...s, fase: 'fin', lastTickAt: null };
+  return { ...s, fase: 'fin', lastTickAt: null, traspaso: null };
 }
 
+/** Sale de una pausa o de un traspaso de turno y vuelve a correr el reloj. */
 export function reanudar(state, ahora) {
-  if (state.fase !== 'pausa') return state;
-  return { ...state, fase: 'jugando', lastTickAt: ahora };
+  if (state.fase !== 'pausa' && state.fase !== 'traspaso') return state;
+  return { ...state, fase: 'jugando', lastTickAt: ahora, traspaso: null };
 }
 
 /** Descuenta el tiempo transcurrido al jugador en turno. */
@@ -140,7 +145,17 @@ function accion(state, estadoNuevo, ahora) {
     const otro = 1 - idx;
     if (!s.jugadores[otro].finished) s.turno = otro;
   }
-  return asentar(s);
+  asentar(s);
+
+  // Si el turno cambió de manos, frenamos todo hasta que el anfitrión toque "Seguir":
+  // el otro jugador tiene que poder prepararse antes de que corra su reloj.
+  if (s.fase === 'jugando' && s.turno !== idx) {
+    const motivo = estadoNuevo === 'errada' ? 'errada' : estadoNuevo === 'pasada' ? 'pasada' : 'completo';
+    s.fase = 'traspaso';
+    s.lastTickAt = null;
+    s.traspaso = { de: idx, a: s.turno, motivo };
+  }
+  return s;
 }
 
 export const correcta = (state, ahora) => accion(state, 'acertada', ahora);
@@ -164,6 +179,7 @@ export function deshacer(state, ahora) {
   s.turno = snap.turno;
   s.fase = 'pausa';
   s.lastTickAt = null;
+  s.traspaso = null;
   s.jugadores.forEach((p, i) => {
     const previo = snap.jugadores[i];
     p.cursor = previo.cursor;
@@ -216,6 +232,8 @@ export function estadoPublico(state) {
     turno: state.turno,
     tiempoMs: state.tiempoMs,
     ganador: state.fase === 'fin' ? ganador : null,
+    // En un traspaso de turno no se muestra aún la definición del que sigue.
+    traspaso: state.fase === 'traspaso' ? state.traspaso : null,
     actual: l ? { letra: l.letra, tipo: l.tipo, definicion: l.definicion } : null,
     jugadores: state.jugadores.map((p, i) => ({
       nombre: p.nombre,

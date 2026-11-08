@@ -67,7 +67,7 @@ function render(estado) {
 
   const tarjetas = estado.jugadores
     .map((j, i) => {
-      const activo = i === turno && (fase === 'jugando' || fase === 'pausa') && !j.finished;
+      const activo = i === turno && ['jugando', 'pausa', 'traspaso'].includes(fase) && !j.finished;
       return `<div class="tv-jug${activo ? ' activo' : ''}${j.finished ? ' terminado' : ''}">
         <div class="nom">${esc(j.nombre)}</div>
         <div class="tiempo" data-tiempo="${i}">${formatoTiempo(j.remainingMs)}</div>
@@ -102,8 +102,20 @@ function render(estado) {
       </aside>
     </div>
     ${fase === 'pausa' ? '<div class="tv-overlay"><h2>PAUSA</h2></div>' : ''}
+    ${fase === 'traspaso' ? overlayTraspaso(estado) : ''}
     ${fase === 'fin' ? overlayFin(estado) : ''}`;
   pintarTiempos();
+}
+
+const TITULOS_TRASPASO = { pasada: '¡PASAPALABRA!', errada: '¡INCORRECTA!', completo: '¡ROSCO COMPLETO!' };
+
+// Pausa entre turnos: todavía no se muestra la definición del jugador que sigue.
+function overlayTraspaso({ traspaso, jugadores }) {
+  const { a, motivo } = traspaso;
+  return `<div class="tv-overlay traspaso ${esc(motivo)}">
+    <h2>${TITULOS_TRASPASO[motivo] ?? ''}</h2>
+    <p>Turno de <b>${esc(jugadores[a].nombre)}</b></p>
+  </div>`;
 }
 
 function overlayFin(estado) {
