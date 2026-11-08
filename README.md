@@ -24,7 +24,9 @@ En el celular también andan las teclas **C** (correcta), **I** (incorrecta) y *
 
 ## Publicar en GitHub Pages
 
-*Settings → Pages → Build and deployment → Deploy from a branch →* elegí la rama y la carpeta `/ (root)`. En un minuto queda en `https://<usuario>.github.io/pasapalabra/`.
+*Settings → Pages → Build and deployment → Deploy from a branch →* elegí la rama y la carpeta `/ (root)`. En un minuto queda en `https://<usuario>.github.io/Pasapalabra/` (el nombre del repo, **con las mayúsculas exactas**: las rutas de Pages las distinguen).
+
+**Cómo abrir el TV sin errores de tipeo:** los teclados de los Smart TV suelen capitalizar solos. Lo más fácil es escribir en el TV solo la dirección del sitio (`https://<usuario>.github.io/Pasapalabra/`) y tocar el link **📺 ¿Este es el TV? Abrir pantalla de TV** que aparece arriba. Si igual escribís `Tv.html` o `/TV`, la página `404.html` te corrige a `tv.html` sola.
 
 > El código de sala se arma con el servicio público de PeerJS, así que celular y TV necesitan internet (pueden estar en redes distintas).
 
@@ -70,5 +72,7 @@ Para probar sin internet, agregá `?local=1` a las dos páginas (`index.html?loc
 | `js/host.js` / `index.html` | Control del celular. Es la única fuente de verdad. |
 | `js/tv.js` / `tv.html` | Pantalla del TV: solo dibuja lo que recibe. |
 | `js/rosco-view.js` | Dibujo del rosco en SVG. |
+| `404.html` / `js/ruta404.js` | Corrige URLs mal tipeadas (mayúsculas, `/tv`) en GitHub Pages. |
+| `tests/pages-server.mjs` | Servidor que imita a GitHub Pages (usado por el e2e). |
 
 La respuesta **nunca** sale del celular: `estadoPublico()` no la incluye y un test lo comprueba.

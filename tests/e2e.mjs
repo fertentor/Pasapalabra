@@ -5,9 +5,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { iniciarServidorPages } from './pages-server.mjs';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
-const BASE = process.env.BASE ?? 'http://localhost:8123';
+// Sin BASE, levanta un servidor que imita a GitHub Pages (sitio bajo /Pasapalabra/, 404.html, mayúsculas).
+const pages = process.env.BASE ? null : await iniciarServidorPages();
+const BASE = process.env.BASE ?? pages.url;
 const SHOTS = process.env.SHOTS;
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 
@@ -139,6 +142,30 @@ await tv2.click('#formCodigo button');
 await tv2.waitForSelector('.tv-overlay.fin');
 console.log('✔ Un TV que entra tarde con el código recibe el estado actual');
 
+// -------------------------------------------- 404: mayúsculas y rutas raras
+// (lo que pasa si el teclado del TV capitaliza: /Tv.html no existe en Pages)
+const tv3 = await context.newPage();
+await tv3.setViewportSize({ width: 1280, height: 720 });
+await tv3.goto(`${BASE}/Tv.html?local=1&sala=${codigo}`);
+await tv3.waitForURL(`${BASE}/tv.html?local=1&sala=${codigo}`);
+await tv3.waitForSelector('.tv-overlay.fin');
+console.log('✔ /Tv.html (mayúscula) redirige a tv.html y conecta con la sala');
+
+await tv3.goto(`${BASE}/TV`);
+await tv3.waitForURL(`${BASE}/tv.html`);
+assert.equal(await tv3.title(), 'Pasapalabra · TV');
+console.log('✔ /TV sin extensión también llega al TV');
+
+await tv3.goto(`${BASE}/nada/raro`);
+assert.equal(await tv3.getAttribute('#tv', 'href'), '/Pasapalabra/tv.html');
+assert.equal(await tv3.getAttribute('#control', 'href'), '/Pasapalabra/');
+await shot(tv3, '08-404-botones');
+console.log('✔ Ruta desconocida: 404 con botones a Control y TV');
+
+assert.equal(await cel.getAttribute('#linkTV', 'href'), 'tv.html');
+console.log('✔ El menú del celular tiene el link "Abrir pantalla de TV"');
+
 assert.deepEqual(errores, [], `Errores de consola:\n${errores.join('\n')}`);
 await browser.close();
+await pages?.cerrar();
 console.log('\nTodo OK');
