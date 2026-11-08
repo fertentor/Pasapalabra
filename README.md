@@ -4,7 +4,7 @@ El rosco de Pasapalabra para jugar con amigos. **El celular es el control** (ve 
 
 - 27 letras (A–Z con Ñ), consignas "Empieza con…" y "Contiene la…".
 - **2 jugadores por turnos** (cada uno con su rosco y su reloj de 2:30) o **un solo rosco**.
-- 10 roscos en español rioplatense, de fácil a difícil; se elige uno puntual o al azar.
+- 23 roscos de cultura general en español rioplatense, en tres niveles: **fácil** (3, vocabulario cotidiano), **medio** (10, cultura general de secundaria: geografía, historia, literatura, arte y ciencias) y **difícil** (10, términos y personajes más específicos). Se elige uno puntual, al azar o al azar por nivel.
 - Sin servidor propio: sitio estático + WebRTC (PeerJS) entre el celular y el TV.
 
 ## Cómo jugar

@@ -33,16 +33,35 @@ test('ids de rosco únicos y 27 letras en orden', () => {
   for (const r of banco) assert.deepEqual(r.letras.map((l) => l.letra), LETRAS);
 });
 
-test('hay roscos de las tres dificultades', () => {
-  for (const d of ['facil', 'medio', 'dificil']) assert.ok(banco.some((r) => r.dificultad === d), d);
+test('hay roscos de las tres dificultades, con buena cantidad de medios y difíciles', () => {
+  const cuenta = (d) => banco.filter((r) => r.dificultad === d).length;
+  assert.ok(cuenta('facil') >= 1, 'facil');
+  assert.ok(cuenta('medio') >= 10, `medio: ${cuenta('medio')}`);
+  assert.ok(cuenta('dificil') >= 10, `dificil: ${cuenta('dificil')}`);
 });
 
-test('ninguna respuesta se repite entre roscos de la misma dificultad', () => {
+test('en medio y difícil no hay respuestas de 3 letras o menos (chequeo de calibración)', () => {
+  const cortas = banco
+    .filter((r) => r.dificultad !== 'facil')
+    .flatMap((r) => r.letras.filter((l) => normalizar(l.respuesta).length <= 3).map((l) => `${r.id} ${l.letra}: ${l.respuesta}`));
+  assert.deepEqual(cortas, []);
+});
+
+test('las respuestas medias y difíciles son más largas que las fáciles', () => {
+  const largo = (d) => {
+    const ls = banco.filter((r) => r.dificultad === d).flatMap((r) => r.letras);
+    return ls.reduce((n, l) => n + l.respuesta.length, 0) / ls.length;
+  };
+  assert.ok(largo('medio') > largo('facil'));
+  assert.ok(largo('dificil') > largo('medio'));
+});
+
+test('ninguna respuesta se repite en todo el banco', () => {
   const vistas = new Map();
   const repetidas = [];
   for (const r of banco) {
     for (const l of r.letras) {
-      const clave = `${r.dificultad}:${normalizar(l.respuesta)}`;
+      const clave = normalizar(l.respuesta).replace(/[^a-zñ0-9]/g, '');
       if (vistas.has(clave)) repetidas.push(`${l.respuesta} (${vistas.get(clave)} / ${r.id})`);
       else vistas.set(clave, r.id);
     }
@@ -66,9 +85,9 @@ test('normalizar conserva la ñ y quita tildes', () => {
 });
 
 test('elegirRosco: puntual, filtrado por dificultad y sin repetir el último', () => {
-  assert.equal(elegirRosco(banco, { id: 'argentina' }).id, 'argentina');
+  assert.equal(elegirRosco(banco, { id: 'ciencia-tecnologia' }).id, 'ciencia-tecnologia');
   for (let i = 0; i < 20; i++) assert.equal(elegirRosco(banco, { dificultad: 'dificil' }).dificultad, 'dificil');
-  for (let i = 0; i < 20; i++) assert.notEqual(elegirRosco(banco, {}, 'argentina').id, 'argentina');
+  for (let i = 0; i < 20; i++) assert.notEqual(elegirRosco(banco, {}, 'ciencia-tecnologia').id, 'ciencia-tecnologia');
   // si es el único del pool, igual lo devuelve
   assert.equal(elegirRosco([banco[0]], {}, banco[0].id).id, banco[0].id);
 });
