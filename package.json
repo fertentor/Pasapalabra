@@ -1,0 +1,12 @@
+{
+  "name": "pasapalabra",
+  "version": "1.0.0",
+  "description": "Rosco de Pasapalabra para jugar con amigos: el celular es el control y el TV la pantalla.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8123",
+    "test": "node --test tests/*.test.mjs",
+    "e2e": "node tests/e2e.mjs"
+  }
+}

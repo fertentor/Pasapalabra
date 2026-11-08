@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071a52">
+  <title>Pasapalabra · Control</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+  <script type="module" src="js/host.js"></script>
+</head>
+<body class="host">
+  <header class="topbar">
+    <h1>Pasapalabra</h1>
+    <div class="chip" id="chipSala" aria-live="polite">Sala <b id="codigo">····</b> · <span id="tvTxt">sin TV</span></div>
+  </header>
+
+  <div id="aviso" class="aviso" hidden></div>
+
+  <main>
+    <!-- Menú -->
+    <section id="vistaLobby" class="vista">
+      <div class="card" id="cardTV">
+        <h2>1. Conectá el TV</h2>
+        <p>En el navegador del TV abrí <b class="mono" id="urlTV">tv.html</b> y escribí este código:</p>
+        <div class="codigo-grande" id="codigoGrande">····</div>
+        <div class="fila">
+          <button type="button" class="btn sec" id="btnCopiar">Copiar link del TV</button>
+          <button type="button" class="btn sec" id="btnCompartir" hidden>Compartir</button>
+        </div>
+        <p class="estado-tv" id="estadoTV">Esperando al TV…</p>
+      </div>
+
+      <form class="card" id="formAjustes" autocomplete="off">
+        <h2>2. Armá la partida</h2>
+
+        <fieldset class="modos">
+          <legend class="sr">Modo de juego</legend>
+          <label class="opcion"><input type="radio" name="modo" value="dos" checked>
+            <span><b>2 jugadores</b><small>Por turnos, cada uno con su rosco</small></span></label>
+          <label class="opcion"><input type="radio" name="modo" value="solo">
+            <span><b>Un solo rosco</b><small>Un jugador o equipo a la vez</small></span></label>
+        </fieldset>
+
+        <div class="grid2">
+          <label>Jugador 1<input name="n1" maxlength="14" placeholder="Jugador 1"></label>
+          <label id="lblJ2">Jugador 2<input name="n2" maxlength="14" placeholder="Jugador 2"></label>
+        </div>
+
+        <label>Rosco
+          <select name="rosco" id="selRosco"><option value="azar">Cargando…</option></select>
+        </label>
+
+        <label class="check" id="lblDistinto"><input type="checkbox" name="distinto">
+          Un rosco distinto para cada jugador</label>
+
+        <label>Tiempo por jugador
+          <select name="tiempo">
+            <option value="90">1:30</option>
+            <option value="120">2:00</option>
+            <option value="150" selected>2:30 (como en el programa)</option>
+            <option value="180">3:00</option>
+            <option value="240">4:00</option>
+          </select>
+        </label>
+
+        <button class="btn grande" type="submit" id="btnArmar" disabled>Armar partida</button>
+      </form>
+    </section>
+
+    <!-- Partida -->
+    <section id="vistaJuego" class="vista" hidden>
+      <div id="marcador" class="marcador"></div>
+      <div class="rosco-host" id="roscoHost"></div>
+      <div class="card carta" id="carta"></div>
+    </section>
+  </main>
+
+  <footer class="controles" id="controles" hidden>
+    <div class="botones">
+      <button type="button" class="btn mal" id="btnIncorrecta"><span>✘</span>Incorrecta</button>
+      <button type="button" class="btn pasa" id="btnPasa"><span>⏭</span>Pasapalabra</button>
+      <button type="button" class="btn bien" id="btnCorrecta"><span>✔</span>Correcta</button>
+    </div>
+    <div class="extra">
+      <button type="button" id="btnPausa">⏸ Pausa</button>
+      <button type="button" id="btnDeshacer">↶ Deshacer</button>
+      <button type="button" id="btnTerminar">Terminar</button>
+    </div>
+  </footer>
+
+  <div id="overlay" class="overlay" hidden></div>
+</body>
+</html>

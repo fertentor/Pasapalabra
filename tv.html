@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071a52">
+  <title>Pasapalabra · TV</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+  <script type="module" src="js/tv.js"></script>
+</head>
+<body class="tv">
+  <main id="app">
+    <!-- Ingreso del código de sala -->
+    <section id="pantallaCodigo" class="tv-centro" hidden>
+      <h1 class="tv-logo">PASAPALABRA</h1>
+      <p class="tv-sub">Escribí el código que aparece en el celular</p>
+      <form id="formCodigo" autocomplete="off">
+        <input id="inputCodigo" class="tv-input" maxlength="4" inputmode="text" autocapitalize="characters"
+               placeholder="ABCD" aria-label="Código de sala" autofocus>
+        <button class="btn grande" type="submit">Conectar</button>
+      </form>
+    </section>
+
+    <!-- Mensajes de espera -->
+    <section id="pantallaEspera" class="tv-centro" hidden>
+      <h1 class="tv-logo">PASAPALABRA</h1>
+      <p class="tv-sub" id="textoEspera"></p>
+      <button type="button" class="link" id="btnOtraSala" hidden>Usar otro código</button>
+    </section>
+
+    <!-- Juego -->
+    <section id="pantallaJuego" hidden></section>
+  </main>
+
+  <div id="estadoConexion" class="estado-conexion" hidden></div>
+  <button type="button" id="btnPantallaCompleta" class="pantalla-completa" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
+</body>
+</html>
